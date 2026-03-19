@@ -1,7 +1,5 @@
 const PHASE_LEN = 5.5;
 const CYCLE_LEN = PHASE_LEN * 2; // 11s
-
-// 3-2-1 geri sayımın toplam süresi (saniye). İstersen 2.0 yapabiliriz.
 const PRE_ROLL = 3.0;
 
 const MIN_SCALE = 0.78;
@@ -25,11 +23,9 @@ let t0 = 0;
 let pausedElapsed = 0;
 let lastPhase = "idle";
 
-// End alignment: timer 00:00 olduktan sonra exhale sonunda bitir
 let endingMode = false;
 let prevCycleIndex = 0;
 
-// Guidance: ilk 3 döngü boyunca cümle göster
 let guideCyclesRemaining = 3;
 let guidePrevCycleIndex = 0;
 
@@ -208,6 +204,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const cornerLabel = document.getElementById("cornerLabel");
   const countdown = document.getElementById("countdown");
 
+  const panel = document.getElementById("sidePanel");
+  const toggle = document.getElementById("panelToggle");
+
   const startBtn = document.getElementById("startBtn");
   const pauseBtn = document.getElementById("pauseBtn");
   const resetBtn = document.getElementById("resetBtn");
@@ -234,12 +233,28 @@ window.addEventListener("DOMContentLoaded", () => {
     countOverlay.textContent = String(n);
     countOverlay.classList.add("show");
     countOverlay.classList.remove("fade");
-    // kısa süre sonra fade
     setTimeout(() => {
       countOverlay.classList.add("fade");
       countOverlay.classList.remove("show");
     }, 260);
   }
+
+  function isPanelCollapsed(){
+    return panel.classList.contains("collapsed");
+  }
+
+  function setPanelCollapsed(collapsed){
+    panel.classList.toggle("collapsed", collapsed);
+    toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    toggle.textContent = collapsed ? "▶" : "◀";
+  }
+
+  // ✅ Mobile default: if CSS has it collapsed, sync toggle icon
+  setPanelCollapsed(isPanelCollapsed());
+
+  toggle.addEventListener("click", () => {
+    setPanelCollapsed(!isPanelCollapsed());
+  });
 
   function setDuration(min){
     durationMin = min;
@@ -251,6 +266,9 @@ window.addEventListener("DOMContentLoaded", () => {
     durBtns.forEach(b => b.classList.toggle("active", Number(b.dataset.min) === durationMin));
 
     resetSession(true);
+
+    // ✅ duration seçince panel gizlensin (mobil kolaylık)
+    setPanelCollapsed(true);
   }
 
   function resetSession(silent=false){
@@ -273,18 +291,16 @@ window.addEventListener("DOMContentLoaded", () => {
     pauseBtn.disabled = true;
     resetBtn.disabled = true;
 
-    // Reset visuals/text
     setHueForPhase("inhale");
     setOrbScale(0.84);
 
-    // İlk giriş görünümü
     showHint("Nasal breathing only.", true);
     setPhaseText("Ready", true);
 
-    countOverlay.classList.remove("show");
-    countOverlay.classList.add("fade");
-
     countdown.textContent = fmtMMSS(plannedSec);
+
+    // ✅ reset sonrası panel geri gelsin (süre seçmek kolay olsun)
+    setPanelCollapsed(false);
 
     if (!silent) { /* no-op */ }
   }
@@ -323,13 +339,15 @@ window.addEventListener("DOMContentLoaded", () => {
     guideCyclesRemaining = 3;
     guidePrevCycleIndex = 0;
 
-    // Start anında: “Nasal breathing only.” + Ready göster
     showHint("Nasal breathing only.", true);
     setPhaseText("Ready", true);
 
     startBtn.disabled = true;
     pauseBtn.disabled = false;
     resetBtn.disabled = false;
+
+    // ✅ Start/Resume ile panel gizlensin
+    setPanelCollapsed(true);
 
     t0 = performance.now();
     rafId = requestAnimationFrame(loop);
@@ -349,6 +367,8 @@ window.addEventListener("DOMContentLoaded", () => {
     startBtn.textContent = "Resume";
     startBtn.disabled = false;
     pauseBtn.disabled = true;
+
+    // pause olunca paneli otomatik açmıyorum (istersen açtırırız)
   }
 
   function resume(){
@@ -360,12 +380,14 @@ window.addEventListener("DOMContentLoaded", () => {
     startBtn.disabled = true;
     pauseBtn.disabled = false;
 
+    // ✅ Resume ile panel gizlensin
+    setPanelCollapsed(true);
+
     t0 = performance.now();
     lastPhase = "idle";
     rafId = requestAnimationFrame(loop);
   }
 
-  // Loop helpers for 3-2-1
   let lastCountShown = null;
 
   function loop(){
@@ -374,16 +396,12 @@ window.addEventListener("DOMContentLoaded", () => {
     const now = performance.now();
     const elapsedTotal = pausedElapsed + (now - t0) / 1000;
 
-    // PRE_ROLL boyunca 3-2-1 göster + Ready
     if (elapsedTotal < PRE_ROLL){
       setOrbScale(0.84);
       setHueForPhase("inhale");
-
-      // Countdown display stays full during pre-roll
       countdown.textContent = fmtMMSS(plannedSec);
 
-      // 3-2-1
-      const secLeft = Math.ceil(PRE_ROLL - elapsedTotal); // 3..1
+      const secLeft = Math.ceil(PRE_ROLL - elapsedTotal);
       if (secLeft !== lastCountShown && secLeft >= 1){
         lastCountShown = secLeft;
         pulseCountNumber(secLeft);
@@ -393,20 +411,16 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Breathing phase starts
     const breathElapsed = elapsedTotal - PRE_ROLL;
 
-    // planned countdown to 00:00 and then stay at 00:00
     const remaining = plannedSec - breathElapsed;
     countdown.textContent = fmtMMSS(remaining);
 
-    // when planned finished -> enable ending mode
     if (!endingMode && breathElapsed >= plannedSec){
       endingMode = true;
       prevCycleIndex = Math.floor(breathElapsed / CYCLE_LEN);
     }
 
-    // stop at next cycle boundary after planned ended (exhale end)
     const cycleIndex = Math.floor(breathElapsed / CYCLE_LEN);
     if (endingMode && cycleIndex > prevCycleIndex){
       endSession();
@@ -414,7 +428,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     prevCycleIndex = cycleIndex;
 
-    // Guide cycle counting (only first 3 cycles)
     if (cycleIndex > guidePrevCycleIndex){
       guidePrevCycleIndex = cycleIndex;
       guideCyclesRemaining = Math.max(0, guideCyclesRemaining - 1);
@@ -428,7 +441,6 @@ window.addEventListener("DOMContentLoaded", () => {
     if (phase !== lastPhase){
       setHueForPhase(phase);
 
-      // First 3 cycles: show guidance line, then hide
       if (guideCyclesRemaining > 0){
         if (phase === "inhale") showHint("Breathe in through your nose.", true);
         else showHint("Breathe out through your nose.", true);
@@ -452,11 +464,12 @@ window.addEventListener("DOMContentLoaded", () => {
   // Duration buttons
   durBtns.forEach(btn => btn.addEventListener("click", () => setDuration(Number(btn.dataset.min))));
 
-  // Control buttons
+  // Controls
   startBtn.addEventListener("click", () => {
     if (!running && startBtn.textContent === "Resume") resume();
     else start();
   });
+
   pauseBtn.addEventListener("click", pause);
   resetBtn.addEventListener("click", () => resetSession(false));
 
@@ -469,6 +482,6 @@ window.addEventListener("DOMContentLoaded", () => {
     else if (audioReady && running && lastPhase !== "idle") { try { setPhaseAudio(lastPhase); } catch(e){} }
   });
 
-  // initial
+  // Init
   setDuration(5);
 });
