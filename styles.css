@@ -8,9 +8,10 @@
   --con: 1.03;
 
   --text: #eaf6ff;
-
-  /* Sol üst/alt hizası (crop uyumu için) */
   --uiInsetX: 72px;
+
+  --panelW: 152px;
+  --toggleW: 40px;
 }
 
 *{ box-sizing:border-box; }
@@ -82,17 +83,14 @@ body{
   isolation: isolate;
 }
 
-.orb{
+/* ✅ Shell: mask/clip + shadow burada (iOS kare artefaktını azaltır) */
+.orbShell{
   width: 78%;
   height: 78%;
   border-radius: 50%;
+  overflow: hidden; /* clip */
   transform: scale(var(--scale));
-  will-change: transform, filter;
-
-  background:
-    radial-gradient(circle at 30% 25%, rgba(255,255,255,.92), rgba(255,255,255,.15) 26%, transparent 40%),
-    radial-gradient(circle at 55% 65%, rgba(180,245,255,.55), rgba(127,208,255,.22) 40%, transparent 65%),
-    radial-gradient(circle at 50% 45%, #bfeaff 0%, #7fd0ff 46%, #4aa7ff 100%);
+  will-change: transform;
 
   box-shadow:
     0 38px 90px rgba(0, 40, 80, .55),
@@ -100,19 +98,36 @@ body{
     inset 0 10px 40px rgba(255,255,255,.20),
     inset 0 -18px 44px rgba(0,30,70,.35);
 
-  /* koyulaşma yok: hue-rotate */
-  filter: hue-rotate(var(--hue)) saturate(var(--sat)) contrast(var(--con));
+  /* iOS Safari için kompozit stabilizasyon */
+  -webkit-transform: translateZ(0) scale(var(--scale));
+  transform: translateZ(0) scale(var(--scale));
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 
-  /* yumuşak renk geçişi */
-  transition:
-    filter 2400ms ease,
-    transform 50ms linear;
-
-  position: relative;
-  overflow: hidden;
+  /* Ek güvence: mask (bazı iOS sürümlerinde border-radius+filter bug’ını keser) */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
 
-.orb::before{
+/* ✅ Inner: hue-rotate/filter burada (kare çerçeve bug’ını daha da azaltır) */
+.orbInner{
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  will-change: filter;
+
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,.92), rgba(255,255,255,.15) 26%, transparent 40%),
+    radial-gradient(circle at 55% 65%, rgba(180,245,255,.55), rgba(127,208,255,.22) 40%, transparent 65%),
+    radial-gradient(circle at 50% 45%, #bfeaff 0%, #7fd0ff 46%, #4aa7ff 100%);
+
+  filter: hue-rotate(var(--hue)) saturate(var(--sat)) contrast(var(--con));
+  transition: filter 2400ms ease;
+}
+
+/* highlights */
+.orbInner::before{
   content:"";
   position:absolute;
   inset:-18%;
@@ -126,7 +141,7 @@ body{
   animation: drift 10s ease-in-out infinite;
   pointer-events:none;
 }
-.orb::after{
+.orbInner::after{
   content:"";
   position:absolute;
   inset:0;
@@ -143,12 +158,11 @@ body{
   50%{ transform: translate(1.2%, 1%) rotate(6deg) scale(1.04); }
 }
 
-/* 3-2-1 overlay (fade-out) */
+/* 3-2-1 overlay */
 .countOverlay{
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  /* Topun altı ama inhale/exhale ile çakışmasın diye biraz yukarı */
   bottom: 190px;
   z-index: 25;
   font-size: clamp(60px, 10vw, 120px);
@@ -163,7 +177,7 @@ body{
 .countOverlay.show{ opacity: 1; }
 .countOverlay.fade{ opacity: 0; }
 
-/* Yönlendirme satırı */
+/* guidance line */
 .hintLine{
   position: absolute;
   left: 50%;
@@ -172,7 +186,6 @@ body{
   z-index: 25;
   width: min(860px, 92vw);
   text-align: center;
-
   font-size: clamp(18px, 2.6vw, 28px);
   font-weight: 800;
   color: rgba(234,246,255,.90);
@@ -183,7 +196,7 @@ body{
 }
 .hintLine.visible{ opacity: 1; }
 
-/* Inhale/Exhale yazısı (topa yakın) */
+/* inhale/exhale */
 .readout{
   width:100%;
   display:flex;
@@ -202,20 +215,52 @@ body{
   font-size: clamp(28px, 4.6vw, 64px);
 }
 
-/* Sağ panel */
+/* Panel toggle button */
+.panelToggle{
+  position: fixed;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 60;
+
+  width: var(--toggleW);
+  height: 56px;
+
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.18);
+  color: rgba(234,246,255,.90);
+  font-weight: 900;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(0,0,0,.22);
+  backdrop-filter: blur(6px);
+}
+
+/* Side panel */
 .sidePanel{
   position: fixed;
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 40;
+  z-index: 50;
   display: flex;
   flex-direction: column;
   gap: 12px;
   align-items: stretch;
+  width: var(--panelW);
+
+  transition: transform 280ms ease, opacity 280ms ease;
 }
 
-/* Süre buton grubu */
+/* ✅ Collapsed state: slide out */
+.sidePanel.collapsed{
+  transform: translate(110%, -50%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* durations */
 .durationGroup{
   display: flex;
   flex-direction: column;
@@ -233,7 +278,6 @@ body{
   border: 1px solid rgba(255,255,255,.12);
   border-radius: 12px;
   padding: 9px 10px;
-  min-width: 72px;
   color: rgba(234,246,255,.92);
   background: rgba(0,0,0,.18);
   cursor: pointer;
@@ -253,7 +297,6 @@ body{
   margin-top: 2px;
 }
 
-/* Kontrol butonları */
 .controls{
   display: flex;
   flex-direction: column;
@@ -265,7 +308,6 @@ body{
   border: 1px solid rgba(255,255,255,.12);
   border-radius: 12px;
   padding: 9px 10px;
-  min-width: 120px;
   color: rgba(234,246,255,.92);
   background: rgba(0,0,0,.20);
   box-shadow: 0 10px 20px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.10);
@@ -282,4 +324,13 @@ body{
 .ctrlBtn:disabled{
   opacity: .45;
   cursor: not-allowed;
+}
+
+/* ✅ Mobile default: panel collapsed to avoid overlap */
+@media (max-width: 520px){
+  :root{ --uiInsetX: 18px; }
+  .sidePanel{ width: 146px; }
+  .sidePanel.collapsed{
+    transform: translate(120%, -50%);
+  }
 }
