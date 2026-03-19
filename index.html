@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>5.5 Breathing</title>
 
-  <link rel="stylesheet" href="styles.css?v=31">
-  <script defer src="app.js?v=31"></script>
+  <link rel="stylesheet" href="styles.css?v=32">
+  <script src="app.js?v=32" defer></script>
 </head>
 
 <body>
@@ -19,13 +19,16 @@
   <!-- Orta görsel alan -->
   <main class="stage" aria-label="Breathing visual">
     <div class="orb-wrap" aria-hidden="true">
-      <div id="orb" class="orb" aria-label="breathing orb"></div>
+      <!-- ✅ iOS “kare çerçeve” artefaktı için shell+inner -->
+      <div id="orbShell" class="orbShell">
+        <div id="orbInner" class="orbInner"></div>
+      </div>
     </div>
 
-    <!-- 3-2-1 overlay (topun altında, fade-out) -->
+    <!-- 3-2-1 overlay -->
     <div class="countOverlay" id="countOverlay" aria-hidden="true">3</div>
 
-    <!-- Yönlendirme satırı (ilk 3 döngü boyunca inhale/exhale sırasında görünür) -->
+    <!-- Yönlendirme satırı -->
     <div class="hintLine" id="hintLine" aria-live="polite"></div>
 
     <!-- Inhale/Exhale -->
@@ -34,8 +37,13 @@
     </div>
   </main>
 
+  <!-- ✅ Sağ panel toggle oku (her zaman görünür) -->
+  <button class="panelToggle" id="panelToggle" aria-label="Toggle control panel" aria-expanded="true">
+    ◀
+  </button>
+
   <!-- Sağ panel -->
-  <aside class="sidePanel" aria-label="Control panel">
+  <aside class="sidePanel" id="sidePanel" aria-label="Control panel">
     <div class="durationGroup" aria-label="Durations">
       <button class="durBtn active" data-min="5">5</button>
       <button class="durBtn" data-min="15">15</button>
@@ -56,4 +64,3 @@
   </aside>
 </body>
 </html>
-``
