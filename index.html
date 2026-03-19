@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>5.5 Breathing</title>
+
+  <link rel="stylesheet" href="styles.css?v=31">
+  <script defer src="app.js?v=31"></script>
+</head>
+
+<body>
+  <!-- Sol üst başlık -->
+  <div class="cornerLabel" id="cornerLabel">5 MIN • 5.5 Breathing</div>
+
+  <!-- Sol alt geri sayım -->
+  <div class="countdown" id="countdown">05:00</div>
+
+  <!-- Orta görsel alan -->
+  <main class="stage" aria-label="Breathing visual">
+    <div class="orb-wrap" aria-hidden="true">
+      <div id="orb" class="orb" aria-label="breathing orb"></div>
+    </div>
+
+    <!-- 3-2-1 overlay (topun altında, fade-out) -->
+    <div class="countOverlay" id="countOverlay" aria-hidden="true">3</div>
+
+    <!-- Yönlendirme satırı (ilk 3 döngü boyunca inhale/exhale sırasında görünür) -->
+    <div class="hintLine" id="hintLine" aria-live="polite"></div>
+
+    <!-- Inhale/Exhale -->
+    <div class="readout" aria-live="polite">
+      <div id="phaseLabel" class="phaseLabel">Ready</div>
+    </div>
+  </main>
+
+  <!-- Sağ panel -->
+  <aside class="sidePanel" aria-label="Control panel">
+    <div class="durationGroup" aria-label="Durations">
+      <button class="durBtn active" data-min="5">5</button>
+      <button class="durBtn" data-min="15">15</button>
+      <button class="durBtn" data-min="20">20</button>
+      <button class="durBtn" data-min="25">25</button>
+      <button class="durBtn" data-min="30">30</button>
+      <button class="durBtn" data-min="45">45</button>
+      <button class="durBtn" data-min="60">60</button>
+      <div class="durHint">min</div>
+    </div>
+
+    <div class="controls" aria-label="Playback controls">
+      <button class="ctrlBtn primary" id="startBtn">Start</button>
+      <button class="ctrlBtn" id="pauseBtn" disabled>Pause</button>
+      <button class="ctrlBtn" id="resetBtn" disabled>Reset</button>
+      <button class="ctrlBtn" id="soundBtn" aria-pressed="true">Sound: On</button>
+    </div>
+  </aside>
+</body>
+</html>
+``

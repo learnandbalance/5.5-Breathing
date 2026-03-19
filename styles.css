@@ -1,0 +1,285 @@
+:root{
+  --bg1:#07121b;
+  --bg2:#0b1a25;
+
+  --scale: 0.84;
+  --hue: 0deg;            /* inhale: 0deg (blue), exhale: -60deg (green shift) */
+  --sat: 1.08;
+  --con: 1.03;
+
+  --text: #eaf6ff;
+
+  /* Sol üst/alt hizası (crop uyumu için) */
+  --uiInsetX: 72px;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color:var(--text);
+  background:
+    radial-gradient(1200px 900px at 20% 10%, rgba(70,170,255,.18), transparent 60%),
+    radial-gradient(900px 700px at 80% 30%, rgba(150,240,255,.12), transparent 55%),
+    linear-gradient(180deg, var(--bg1), var(--bg2));
+  overflow:hidden;
+}
+
+/* Sol üst başlık */
+.cornerLabel{
+  position: fixed;
+  top: 14px;
+  left: var(--uiInsetX);
+  z-index: 30;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 900;
+  font-size: clamp(16px, 3.0vw, 22px);
+  letter-spacing: .2px;
+  color: rgba(234,246,255,.95);
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 10px 24px rgba(0,0,0,.20);
+  pointer-events:none;
+}
+
+/* Sol alt geri sayım */
+.countdown{
+  position: fixed;
+  left: var(--uiInsetX);
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 30;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 900;
+  font-size: clamp(16px, 3.0vw, 22px);
+  letter-spacing: .2px;
+  color: rgba(234,246,255,.95);
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 10px 24px rgba(0,0,0,.20);
+  pointer-events:none;
+}
+
+/* Sahne */
+.stage{
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+}
+
+/* Orb */
+.orb-wrap{
+  width: min(620px, 78vw);
+  aspect-ratio: 1 / 1;
+  display:grid;
+  place-items:center;
+  isolation: isolate;
+}
+
+.orb{
+  width: 78%;
+  height: 78%;
+  border-radius: 50%;
+  transform: scale(var(--scale));
+  will-change: transform, filter;
+
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,.92), rgba(255,255,255,.15) 26%, transparent 40%),
+    radial-gradient(circle at 55% 65%, rgba(180,245,255,.55), rgba(127,208,255,.22) 40%, transparent 65%),
+    radial-gradient(circle at 50% 45%, #bfeaff 0%, #7fd0ff 46%, #4aa7ff 100%);
+
+  box-shadow:
+    0 38px 90px rgba(0, 40, 80, .55),
+    0 14px 30px rgba(0, 0, 0, .35),
+    inset 0 10px 40px rgba(255,255,255,.20),
+    inset 0 -18px 44px rgba(0,30,70,.35);
+
+  /* koyulaşma yok: hue-rotate */
+  filter: hue-rotate(var(--hue)) saturate(var(--sat)) contrast(var(--con));
+
+  /* yumuşak renk geçişi */
+  transition:
+    filter 2400ms ease,
+    transform 50ms linear;
+
+  position: relative;
+  overflow: hidden;
+}
+
+.orb::before{
+  content:"";
+  position:absolute;
+  inset:-18%;
+  background:
+    radial-gradient(closest-side at 60% 35%, rgba(255,255,255,.35), transparent 60%),
+    radial-gradient(closest-side at 40% 65%, rgba(90,190,255,.18), transparent 62%),
+    conic-gradient(from 220deg, rgba(255,255,255,.0), rgba(255,255,255,.10), rgba(255,255,255,.0));
+  mix-blend-mode: overlay;
+  opacity: .60;
+  filter: blur(0.4px);
+  animation: drift 10s ease-in-out infinite;
+  pointer-events:none;
+}
+.orb::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), transparent 38%),
+    radial-gradient(circle at 50% 52%, rgba(0,0,0,.12), transparent 55%);
+  opacity: .45;
+  mix-blend-mode: soft-light;
+  pointer-events:none;
+}
+
+@keyframes drift{
+  0%,100%{ transform: translate(-1%, -1%) rotate(0deg) scale(1.02); }
+  50%{ transform: translate(1.2%, 1%) rotate(6deg) scale(1.04); }
+}
+
+/* 3-2-1 overlay (fade-out) */
+.countOverlay{
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Topun altı ama inhale/exhale ile çakışmasın diye biraz yukarı */
+  bottom: 190px;
+  z-index: 25;
+  font-size: clamp(60px, 10vw, 120px);
+  font-weight: 950;
+  letter-spacing: 1px;
+  color: rgba(234,246,255,.92);
+  text-shadow: 0 18px 40px rgba(0,0,0,.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 380ms ease;
+}
+.countOverlay.show{ opacity: 1; }
+.countOverlay.fade{ opacity: 0; }
+
+/* Yönlendirme satırı */
+.hintLine{
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 140px;
+  z-index: 25;
+  width: min(860px, 92vw);
+  text-align: center;
+
+  font-size: clamp(18px, 2.6vw, 28px);
+  font-weight: 800;
+  color: rgba(234,246,255,.90);
+  text-shadow: 0 14px 32px rgba(0,0,0,.45);
+  opacity: 0;
+  transition: opacity 600ms ease;
+  pointer-events:none;
+}
+.hintLine.visible{ opacity: 1; }
+
+/* Inhale/Exhale yazısı (topa yakın) */
+.readout{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  margin-top: 8px;
+  min-height: 64px;
+  transform: translateY(-26px);
+  z-index: 20;
+}
+.phaseLabel{
+  font-weight: 950;
+  letter-spacing: .3px;
+  text-shadow: 0 12px 26px rgba(0,0,0,.40);
+  opacity: 1;
+  transition: opacity 600ms ease;
+  font-size: clamp(28px, 4.6vw, 64px);
+}
+
+/* Sağ panel */
+.sidePanel{
+  position: fixed;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* Süre buton grubu */
+.durationGroup{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(0,0,0,.16);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 10px 20px rgba(0,0,0,.22);
+  backdrop-filter: blur(6px);
+}
+
+.durBtn{
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 9px 10px;
+  min-width: 72px;
+  color: rgba(234,246,255,.92);
+  background: rgba(0,0,0,.18);
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: .2px;
+}
+.durBtn.active{
+  background: rgba(70,170,255,.18);
+  border-color: rgba(150,240,255,.35);
+}
+
+.durHint{
+  text-align:center;
+  font-size: 11px;
+  opacity: .65;
+  margin-top: 2px;
+}
+
+/* Kontrol butonları */
+.controls{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.ctrlBtn{
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 9px 10px;
+  min-width: 120px;
+  color: rgba(234,246,255,.92);
+  background: rgba(0,0,0,.20);
+  box-shadow: 0 10px 20px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.10);
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: .2px;
+  backdrop-filter: blur(6px);
+}
+.ctrlBtn.primary{
+  background: rgba(70,170,255,.18);
+  border-color: rgba(150,240,255,.32);
+}
+.ctrlBtn:disabled{
+  opacity: .45;
+  cursor: not-allowed;
+}
