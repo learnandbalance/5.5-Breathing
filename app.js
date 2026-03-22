@@ -224,21 +224,6 @@ window.addEventListener("DOMContentLoaded", () => {
     hintLine.classList.toggle("visible", !!on && !!text);
   }
 
-  function pulseCountNumber(n){
-    if (!n || n < 1) {
-      countOverlay.classList.remove("show");
-      countOverlay.classList.add("fade");
-      return;
-    }
-    countOverlay.textContent = String(n);
-    countOverlay.classList.add("show");
-    countOverlay.classList.remove("fade");
-    setTimeout(() => {
-      countOverlay.classList.add("fade");
-      countOverlay.classList.remove("show");
-    }, 260);
-  }
-
   function isPanelCollapsed(){
     return panel.classList.contains("collapsed");
   }
@@ -249,12 +234,8 @@ window.addEventListener("DOMContentLoaded", () => {
     toggle.textContent = collapsed ? "▶" : "◀";
   }
 
-  // ✅ Mobile default: if CSS has it collapsed, sync toggle icon
   setPanelCollapsed(isPanelCollapsed());
-
-  toggle.addEventListener("click", () => {
-    setPanelCollapsed(!isPanelCollapsed());
-  });
+  toggle.addEventListener("click", () => setPanelCollapsed(!isPanelCollapsed()));
 
   function setDuration(min){
     durationMin = min;
@@ -266,8 +247,6 @@ window.addEventListener("DOMContentLoaded", () => {
     durBtns.forEach(b => b.classList.toggle("active", Number(b.dataset.min) === durationMin));
 
     resetSession(true);
-
-    // ✅ duration seçince panel gizlensin (mobil kolaylık)
     setPanelCollapsed(true);
   }
 
@@ -291,17 +270,21 @@ window.addEventListener("DOMContentLoaded", () => {
     pauseBtn.disabled = true;
     resetBtn.disabled = true;
 
+    // ✅ Bekleme ekranı: en küçük top
     setHueForPhase("inhale");
-    setOrbScale(0.84);
+    setOrbScale(MIN_SCALE);
 
+    // İlk giriş görünümü
     showHint("Nasal breathing only.", true);
     setPhaseText("Ready", true);
 
+    // ✅ Geri sayım görünmesin (Start ile başlar)
+    countOverlay.style.opacity = "0";
+    countOverlay.textContent = "3";
+
     countdown.textContent = fmtMMSS(plannedSec);
 
-    // ✅ reset sonrası panel geri gelsin (süre seçmek kolay olsun)
     setPanelCollapsed(false);
-
     if (!silent) { /* no-op */ }
   }
 
@@ -311,6 +294,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     try { stopAudioSoft(); } catch(e){}
 
+    // ✅ Son bekleme: en küçük top
     setHueForPhase("exhale");
     setOrbScale(MIN_SCALE);
 
@@ -339,6 +323,9 @@ window.addEventListener("DOMContentLoaded", () => {
     guideCyclesRemaining = 3;
     guidePrevCycleIndex = 0;
 
+    // ✅ Start anında: küçük top + Ready + nasal hint
+    setHueForPhase("inhale");
+    setOrbScale(MIN_SCALE);
     showHint("Nasal breathing only.", true);
     setPhaseText("Ready", true);
 
@@ -346,7 +333,6 @@ window.addEventListener("DOMContentLoaded", () => {
     pauseBtn.disabled = false;
     resetBtn.disabled = false;
 
-    // ✅ Start/Resume ile panel gizlensin
     setPanelCollapsed(true);
 
     t0 = performance.now();
@@ -367,8 +353,6 @@ window.addEventListener("DOMContentLoaded", () => {
     startBtn.textContent = "Resume";
     startBtn.disabled = false;
     pauseBtn.disabled = true;
-
-    // pause olunca paneli otomatik açmıyorum (istersen açtırırız)
   }
 
   function resume(){
@@ -379,8 +363,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
     startBtn.disabled = true;
     pauseBtn.disabled = false;
-
-    // ✅ Resume ile panel gizlensin
     setPanelCollapsed(true);
 
     t0 = performance.now();
@@ -396,20 +378,25 @@ window.addEventListener("DOMContentLoaded", () => {
     const now = performance.now();
     const elapsedTotal = pausedElapsed + (now - t0) / 1000;
 
+    // ✅ PRE_ROLL: top en küçük; 3-2-1 sabit görünür (fade-out yok)
     if (elapsedTotal < PRE_ROLL){
-      setOrbScale(0.84);
       setHueForPhase("inhale");
+      setOrbScale(MIN_SCALE);
       countdown.textContent = fmtMMSS(plannedSec);
 
-      const secLeft = Math.ceil(PRE_ROLL - elapsedTotal);
-      if (secLeft !== lastCountShown && secLeft >= 1){
+      const secLeft = Math.ceil(PRE_ROLL - elapsedTotal); // 3..1
+      if (secLeft !== lastCountShown){
         lastCountShown = secLeft;
-        pulseCountNumber(secLeft);
+        countOverlay.textContent = String(secLeft);
       }
+      countOverlay.style.opacity = "1"; // sabit görünür
 
       rafId = requestAnimationFrame(loop);
       return;
     }
+
+    // Breathing starts: hide count instantly (no fade)
+    countOverlay.style.opacity = "0";
 
     const breathElapsed = elapsedTotal - PRE_ROLL;
 
@@ -469,7 +456,6 @@ window.addEventListener("DOMContentLoaded", () => {
     if (!running && startBtn.textContent === "Resume") resume();
     else start();
   });
-
   pauseBtn.addEventListener("click", pause);
   resetBtn.addEventListener("click", () => resetSession(false));
 
@@ -485,3 +471,4 @@ window.addEventListener("DOMContentLoaded", () => {
   // Init
   setDuration(5);
 });
+``
